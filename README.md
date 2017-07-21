@@ -12,3 +12,14 @@
 
   * The app updates and retrieves data from the 'bamazon' MySQL Database shown here: ![Bamazon Database](./bamazon-database.png)
 
+* bamazonManager.js will have the following 4 options:
+
+  * View Products for Sale
+    
+  * View Low Inventory
+    
+  * Add to Inventory
+    
+  * Add New Product
+
+  * [Click here for a video demo](./manager-walkthrough-compressed.mov)
