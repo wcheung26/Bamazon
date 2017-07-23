@@ -42,13 +42,15 @@ var display = function() {
 	var col2 = 10;
 	var col3 = 15;
 	var col4 = 12;
-	var col5 = 12;
+	var col5 = 8;
+	var col6 = 8;
 	// Header names
 	var header1 = 'Item ID';
 	var header2 = 'Product';
 	var header3 = 'Department';
 	var header4 = 'Price';
 	var header5 = 'Stock';
+	// var header6 = 'Total Sales';
 	// Retrieve data
 	connection.query('SELECT * FROM products', function(err, res) {
 		if (err) throw err;
@@ -71,42 +73,50 @@ var display = function() {
 };
 
 var shop = function() {
-	inquirer.prompt([
-		{
-			name: 'item',
-			type: 'input',
-			message: 'Enter the ID of the product you wish to purchase:',
-			validate: function(id) {
-				if (id > 0 && id <= itemCount && id % 1 === 0) return true;
-			}
-		},
-		{
-			name: 'quantity',
-			type: 'input',
-			message: 'How many do you wish to purchase? ["Q" to exit]',
-			validate: function(q) {
-				if (q > 0 && q % 1 === 0 || q === "Q") return true;
-			}
+	connection.query("SELECT * FROM products", function(err,res) {
+		var ids = [];
+		for (var i = 0; i < res.length; i++) {
+			ids.push(res[i].item_id);
 		}
-	]).then(function(answer) {
-		if (answer.item === "Q" || answer.quantity === "Q") {
-			connection.end();
-			return
-		}
-		connection.query("SELECT * FROM products WHERE item_id = ?", [answer.item], function(err,res) {
-			if (err) throw err;
-			var newStock = res[0].stock_quantity - answer.quantity;
-			if (res[0].stock_quantity >= answer.quantity) {
-				connection.query('UPDATE products SET stock_quantity = ? WHERE item_id = ?', [newStock, answer.item], function(err) {
-					if (err) throw err;
-				});
+		inquirer.prompt([
+			{
+				name: 'item',
+				type: 'input',
+				message: 'Enter the ID of the product you wish to purchase:',
+				validate: function(id) {
+					if (ids.indexOf(parseInt(id)) >= 0) return true;
+				}
+			},
+			{
+				name: 'quantity',
+				type: 'input',
+				message: 'How many do you wish to purchase? ["Q" to exit]',
+				validate: function(q) {
+					if (q > 0 && q % 1 === 0 || q === "Q") return true;
+				}
+			}
+		]).then(function(answer) {
+			if (answer.item === "Q" || answer.quantity === "Q") {
+				connection.end();
+				return
+			}
+			connection.query("SELECT * FROM products WHERE item_id = ?", [answer.item], function(err,res) {
+				if (err) throw err;
+				var newStock = res[0].stock_quantity - answer.quantity;
 				var total = answer.quantity * res[0].price;
-				console.log('Item purchased! Your order total was $' + total);
-				shop();
-			} else {
-				console.log('Sorry, we do not have that many in stock.');
-				shop();
-			}
+				var productTotal = res[0].product_sales + total;
+				console.log("Transaction total: $" + productTotal);
+				if (res[0].stock_quantity >= answer.quantity) {
+					connection.query('UPDATE products SET stock_quantity = ?, product_sales = ? WHERE item_id = ?', [newStock, productTotal, answer.item], function(err) {
+						if (err) throw err;
+					});
+					console.log('Item purchased! Your order total was $' + total + ".");
+					display();
+				} else {
+					console.log('Sorry, we do not have that many in stock.');
+					display();
+				}
+			});
 		});
 	});
 };

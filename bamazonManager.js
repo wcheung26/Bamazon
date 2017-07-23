@@ -112,7 +112,9 @@ var lowInventory = function() {
 var addInventory = function() {
 	connection.query("SELECT * FROM products", function(err,res) {
 		itemCount = res.length;
+		var ids = [];
 		for (var i = 0; i < res.length; i++) {
+			ids.push(res[i].item_id);
 			console.log(res[i].item_id, res[i].product_name)
 		}
 		inquirer.prompt([
@@ -121,8 +123,11 @@ var addInventory = function() {
 				type: 'input',
 				message: 'Enter the ID of the product you wish to restock:',
 				validate: function(id) {
-					if (id > 0 && id <= itemCount && id % 1 === 0) return true;
+					if (ids.indexOf(parseInt(id)) >= 0) return true;
 				}
+				// validate: function(id) {
+				// 	if (id > 0 && id <= itemCount && id % 1 === 0) return true;
+				// }
 			},
 			{
 				name: 'quantity',
@@ -139,7 +144,7 @@ var addInventory = function() {
 			}
 			connection.query("SELECT * FROM products WHERE item_id = ?", [answer.item], function(err,res) {
 				if (err) throw err;
-				var newStock = res[0].stock_quantity + answer.quantity;
+				var newStock = res[0].stock_quantity + parseInt(answer.quantity);
 				connection.query('UPDATE products SET stock_quantity = ? WHERE item_id = ?', [newStock, answer.item], function(err) {
 					if (err) throw err;
 					console.log('Product restocked! New stock quantity: ' + newStock);
@@ -151,91 +156,60 @@ var addInventory = function() {
 };
 
 var addProduct = function() {
-	inquirer.prompt([
-		{
-			name: 'newName',
-			type: 'input',
-			message: 'What product would you like to add?',
-			validate: function(name) {
-				if (name) return true;
-			}
-		},
-		{
-			name: 'newDept',
-			type: 'input',
-			message: 'Which department does the product belong to?',
-			validate: function(dept) {
-				if (dept) return true;
-			}
-		},
-		{
-			name: 'newPrice',
-			type: 'input',
-			message: 'Set retail price: ',
-			validate: function(q) {
-				if (q > 0) return true;
-			}
-		},
-		{
-			name: 'newQuantity',
-			type: 'input',
-			message: 'Initial stock quantity: ["Q" to exit]',
-			validate: function(q) {
-				if (q > 0 && q % 1 === 0 || q === "Q") return true;
+	connection.query('SELECT * FROM departments', function(err, res) {
+		if (err) throw err;
+		var depts = [];
+		for (var i = 0; i < res.length; i++) {
+			if (depts.indexOf(res[i].department_name) < 0) {
+				depts.push(res[i].department_name)
 			}
 		}
-	]).then(function(answer) {
-		if (answer.newQuantity === "Q") {
-			connection.end();
-			return
-		}
-		var post = {product_name: answer.newName, department_name: answer.newDept, price: answer.newPrice, stock_quantity: answer.newQuantity};
-		var query = connection.query('INSERT INTO products SET ?', post, function (err, res) {
-			if (err) throw err;
-			console.log("Product added! " + answer.newName + " is now available.");
-			menu();
+		inquirer.prompt([
+			{
+				name: 'newName',
+				type: 'input',
+				message: 'What product would you like to add?',
+				validate: function(name) {
+					if (name) return true;
+				}
+			},
+			{
+				name: 'newDept',
+				type: 'list',
+				choices: depts,
+				message: 'Which department does the product belong to?',
+				validate: function(dept) {
+					if (dept) return true;
+				}
+			},
+			{
+				name: 'newPrice',
+				type: 'input',
+				message: 'Set retail price: ',
+				validate: function(q) {
+					if (q > 0) return true;
+				}
+			},
+			{
+				name: 'newQuantity',
+				type: 'input',
+				message: 'Initial stock quantity: ["Q" to exit]',
+				validate: function(q) {
+					if (q > 0 && q % 1 === 0 || q === "Q") return true;
+				}
+			}
+		]).then(function(answer) {
+			if (answer.newQuantity === "Q") {
+				connection.end();
+				return
+			}
+			var post = {product_name: answer.newName, department_name: answer.newDept, price: answer.newPrice, stock_quantity: answer.newQuantity};
+			var query = connection.query('INSERT INTO products SET ?', post, function (err, res) {
+				if (err) throw err;
+				console.log("Product added! " + answer.newName + " is now available.");
+				menu();
+			});
 		});
 	});
 };
 
-
-// var shop = function() {
-// 	inquirer.prompt([
-// 		{
-// 			name: 'item',
-// 			type: 'input',
-// 			message: 'Enter the ID of the product you wish to purchase:',
-// 			validate: function(id) {
-// 				if (id > 0 && id <= itemCount && id % 1 === 0) return true;
-// 			}
-// 		},
-// 		{
-// 			name: 'quantity',
-// 			type: 'input',
-// 			message: 'How many do you wish to purchase? ["Q" to exit]',
-// 			validate: function(q) {
-// 				if (q > 0 && q % 1 === 0 || q === "Q") return true;
-// 			}
-// 		}
-// 	]).then(function(answer) {
-// 		if (answer.item === "Q" || answer.quantity === "Q") {
-// 			connection.end();
-// 			return
-// 		}
-// 		connection.query("SELECT * FROM products WHERE item_id = ?", [answer.item], function(err,res) {
-// 			if (err) throw err;
-// 			var newStock = res[0].stock_quantity - answer.quantity;
-// 			if (res[0].stock_quantity >= answer.quantity) {
-// 				connection.query('UPDATE products SET stock_quantity = ? WHERE item_id = ?', [newStock, answer.item], function(err) {
-// 					if (err) throw err;
-// 				});
-// 				var total = answer.quantity * res[0].price;
-// 				console.log('Item purchased! Your order total was $' + total);
-// 				shop();
-// 			} else {
-// 				console.log('Sorry, we do not have that many in stock.');
-// 				shop();
-// 			}
-// 		});
-// 	});
-// };

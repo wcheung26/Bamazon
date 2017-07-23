@@ -42,3 +42,28 @@ INSERT INTO products (product_name, department_name, price, stock_quantity)
 VALUES ('Purse', 'Luxury', 3900.00, 30);
 
 SELECT * FROM products;
+
+
+
+CREATE TABLE departments (
+	deparment_id INTEGER(11) AUTO_INCREMENT NOT NULL,
+	department_name VARCHAR(50) NOT NULL,
+	over_head_costs INTEGER(11) NOT NULL,
+	PRIMARY KEY (deparment_id)
+);
+
+ALTER TABLE products
+ADD product_sales INTEGER(11) DEFAULT 0;
+
+
+INSERT INTO departments (department_name, over_head_costs)
+VALUES ("Flowers", 800);
+
+INSERT INTO departments (department_name, over_head_costs)
+VALUES ("Music", 2300);
+
+INSERT INTO departments (department_name, over_head_costs)
+VALUES ("Furniture", 3000);
+
+INSERT INTO departments (department_name, over_head_costs)
+VALUES ("Luxury", 4300);

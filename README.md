@@ -23,3 +23,11 @@
   * Add New Product
 
   * [Click here for a video demo](./manager-walkthrough-compressed.mov)
+
+* bamazonSupervisor.js will have the following 2 options:
+
+  * View Product Sales by Department. This calculates total product sales by department and total profits by department without updating the database. 
+
+  * Create New Department. The supervisor will be prompted with the overhead cost for the new department. This allows managers to create new products under the new department afterwards with bamazonManager.js. 
+
+  * [Click here for a screenshot demo](./supervisor-screenshot.png)
